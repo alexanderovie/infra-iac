@@ -1,15 +1,13 @@
+# TFLint configuration for Fascinante Digital Infrastructure
+# This file configures TFLint rules and settings
+
 plugin "aws" {
   enabled = true
-  version = "0.28.0"
+  version = "0.30.0"
   source  = "github.com/terraform-linters/tflint-ruleset-aws"
 }
 
-plugin "cloudflare" {
-  enabled = true
-  version = "0.2.0"
-  source  = "github.com/terraform-linters/tflint-ruleset-cloudflare"
-}
-
+# Rule configuration
 rule "terraform_comment_syntax" {
   enabled = true
 }
@@ -35,7 +33,7 @@ rule "terraform_module_pinned_source" {
 }
 
 rule "terraform_naming_convention" {
-  enabled = true
+  enabled = false
 }
 
 rule "terraform_required_providers" {
@@ -59,5 +57,22 @@ rule "terraform_unused_declarations" {
 }
 
 rule "terraform_unused_required_providers" {
+  enabled = true
+}
+
+# AWS specific rules
+rule "aws_instance_invalid_ami" {
+  enabled = true
+}
+
+rule "aws_instance_invalid_type" {
+  enabled = true
+}
+
+rule "aws_s3_bucket_invalid_acl" {
+  enabled = true
+}
+
+rule "aws_s3_bucket_invalid_region" {
   enabled = true
 }

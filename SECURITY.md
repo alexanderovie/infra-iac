@@ -110,7 +110,7 @@ cloudflare_api_token = "actual-token-here"
 # ✅ Correcto - Rol con permisos mínimos
 resource "aws_iam_role" "lambda_execution" {
   name = "lambda-execution-role"
-  
+
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -129,7 +129,7 @@ resource "aws_iam_role" "lambda_execution" {
 resource "aws_iam_role_policy" "lambda_policy" {
   name = "lambda-policy"
   role = aws_iam_role.lambda_execution.id
-  
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -160,7 +160,7 @@ resource "aws_s3_bucket" "example" {
 # Bloqueo de acceso público
 resource "aws_s3_bucket_public_access_block" "example" {
   bucket = aws_s3_bucket.example.id
-  
+
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
@@ -170,7 +170,7 @@ resource "aws_s3_bucket_public_access_block" "example" {
 # Cifrado
 resource "aws_s3_bucket_server_side_encryption_configuration" "example" {
   bucket = aws_s3_bucket.example.id
-  
+
   rule {
     apply_server_side_encryption_by_default {
       sse_algorithm = "AES256"
@@ -193,7 +193,7 @@ resource "aws_s3_bucket_versioning" "example" {
 # Política restrictiva para bucket de estado
 resource "aws_s3_bucket_policy" "terraform_state" {
   bucket = aws_s3_bucket.terraform_state.id
-  
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -284,7 +284,7 @@ resource "cloudflare_record" "insecure" {
 # ✅ Correcto - Bloquear eliminación de recursos críticos
 resource "aws_s3_bucket" "terraform_state" {
   bucket = "fascinante-digital-terraform-state"
-  
+
   lifecycle {
     prevent_destroy = true
   }
@@ -292,7 +292,7 @@ resource "aws_s3_bucket" "terraform_state" {
 
 resource "aws_dynamodb_table" "terraform_locks" {
   name = "fascinante-digital-terraform-locks"
-  
+
   lifecycle {
     prevent_destroy = true
   }
@@ -305,7 +305,7 @@ resource "aws_dynamodb_table" "terraform_locks" {
 # Validar configuración crítica
 resource "aws_s3_bucket" "example" {
   bucket = var.bucket_name
-  
+
   # Validar que el bucket no sea público
   lifecycle {
     precondition {
@@ -327,7 +327,7 @@ resource "aws_cloudtrail" "terraform_audit" {
   s3_bucket_name               = aws_s3_bucket.cloudtrail.id
   include_global_service_events = true
   is_multi_region_trail        = true
-  
+
   event_selector {
     read_write_type                 = "All"
     include_management_events       = true
@@ -345,7 +345,7 @@ resource "aws_cloudtrail" "terraform_audit" {
 # Regla para verificar cifrado de S3
 resource "aws_config_config_rule" "s3_encryption" {
   name = "s3-bucket-encryption"
-  
+
   source {
     owner             = "AWS"
     source_identifier = "S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED"
@@ -433,7 +433,7 @@ docker run -t owasp/zap2docker-stable zap-baseline.py -t https://api.fascinanted
 
 ## 📞 Contacto de Seguridad
 
-- **Email**: security@fascinantedigital.com
+- **Email**: [info@fascinantedigital.com](mailto:info@fascinantedigital.com)
 - **Slack**: #security-alerts
 - **GitHub**: @fascinante-digital/security-team
 

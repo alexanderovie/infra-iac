@@ -13,8 +13,8 @@ NC='\033[0m' # No Color
 
 # Configuration
 TERRAFORM_VERSION="1.10"
-TFLINT_VERSION="0.50.3"
-TFSEC_VERSION="1.28.1"
+# TFLINT_VERSION="0.50.3"
+# TFSEC_VERSION="1.28.1"
 
 # Functions
 log_info() {
@@ -61,7 +61,7 @@ check_file_exists() {
 
 check_directory_structure() {
     log_info "Checking directory structure..."
-    
+
     local dirs=(
         "bootstrap"
         "providers/cloudflare"
@@ -76,7 +76,7 @@ check_directory_structure() {
         "tools"
         "secrets"
     )
-    
+
     for dir in "${dirs[@]}"; do
         if [[ ! -d "$dir" ]]; then
             log_error "Directory $dir does not exist"
@@ -88,7 +88,7 @@ check_directory_structure() {
 
 check_terraform_files() {
     log_info "Checking Terraform files..."
-    
+
     local files=(
         "bootstrap/main.tf"
         "bootstrap/variables.tf"
@@ -115,7 +115,7 @@ check_terraform_files() {
         "envs/prod/backend.hcl"
         "envs/prod/variables.tf"
     )
-    
+
     for file in "${files[@]}"; do
         check_file_exists "$file"
     done
@@ -123,7 +123,7 @@ check_terraform_files() {
 
 check_configuration_files() {
     log_info "Checking configuration files..."
-    
+
     local files=(
         ".gitignore"
         ".editorconfig"
@@ -140,7 +140,7 @@ check_configuration_files() {
         ".github/ISSUE_TEMPLATE/feature_request.md"
         ".github/ISSUE_TEMPLATE/security_issue.md"
     )
-    
+
     for file in "${files[@]}"; do
         check_file_exists "$file"
     done
@@ -148,7 +148,7 @@ check_configuration_files() {
 
 check_terraform_format() {
     log_info "Checking Terraform format..."
-    
+
     if ! terraform fmt -check -recursive; then
         log_error "Terraform files are not properly formatted"
         log_info "Run 'terraform fmt -recursive' to fix formatting"
@@ -159,9 +159,9 @@ check_terraform_format() {
 
 check_terraform_validate() {
     log_info "Validating Terraform configurations..."
-    
+
     local dirs=("bootstrap" "envs/dev" "envs/stage" "envs/prod")
-    
+
     for dir in "${dirs[@]}"; do
         log_info "Validating $dir..."
         if ! (cd "$dir" && terraform init -backend=false && terraform validate); then
@@ -174,7 +174,7 @@ check_terraform_validate() {
 
 check_secrets() {
     log_info "Checking secrets configuration..."
-    
+
     if [[ -f "secrets/dev.tfvars" ]]; then
         if file "secrets/dev.tfvars" | grep -q "encrypted"; then
             log_success "Development secrets are encrypted"
@@ -184,7 +184,7 @@ check_secrets() {
     else
         log_warning "Development secrets file does not exist"
     fi
-    
+
     if [[ -f "secrets/stage.tfvars" ]]; then
         if file "secrets/stage.tfvars" | grep -q "encrypted"; then
             log_success "Staging secrets are encrypted"
@@ -194,7 +194,7 @@ check_secrets() {
     else
         log_warning "Staging secrets file does not exist"
     fi
-    
+
     if [[ -f "secrets/prod.tfvars" ]]; then
         if file "secrets/prod.tfvars" | grep -q "encrypted"; then
             log_success "Production secrets are encrypted"
@@ -208,10 +208,10 @@ check_secrets() {
 
 check_naming_convention() {
     log_info "Checking naming convention..."
-    
+
     # Check for fd- prefix in resource names
     local files=("bootstrap/main.tf" "providers/aws-ses/main.tf" "providers/aws-core/main.tf")
-    
+
     for file in "${files[@]}"; do
         if grep -q "fd-" "$file"; then
             log_success "Naming convention (fd-) found in $file"
@@ -223,9 +223,9 @@ check_naming_convention() {
 
 check_prevent_destroy() {
     log_info "Checking prevent_destroy on critical resources..."
-    
+
     local files=("bootstrap/main.tf" "providers/aws-ses/main.tf")
-    
+
     for file in "${files[@]}"; do
         if grep -q "prevent_destroy = true" "$file"; then
             log_success "prevent_destroy found in $file"
@@ -237,7 +237,7 @@ check_prevent_destroy() {
 
 check_documentation() {
     log_info "Checking documentation..."
-    
+
     local files=(
         "README.md"
         "MIGRATIONS.md"
@@ -251,7 +251,7 @@ check_documentation() {
         "providers/vercel/README.md"
         "secrets/README.md"
     )
-    
+
     for file in "${files[@]}"; do
         check_file_exists "$file"
     done
@@ -260,7 +260,7 @@ check_documentation() {
 main() {
     log_info "Starting sanity check for Fascinante Digital Infrastructure..."
     echo
-    
+
     # Check required commands
     log_info "Checking required commands..."
     check_command "terraform"
@@ -271,48 +271,48 @@ main() {
     check_command "jq"
     check_command "make"
     echo
-    
+
     # Check Terraform version
     log_info "Checking Terraform version..."
     check_terraform_version
     echo
-    
+
     # Check directory structure
     check_directory_structure
     echo
-    
+
     # Check Terraform files
     check_terraform_files
     echo
-    
+
     # Check configuration files
     check_configuration_files
     echo
-    
+
     # Check Terraform format
     check_terraform_format
     echo
-    
+
     # Check Terraform validation
     check_terraform_validate
     echo
-    
+
     # Check secrets
     check_secrets
     echo
-    
+
     # Check naming convention
     check_naming_convention
     echo
-    
+
     # Check prevent_destroy
     check_prevent_destroy
     echo
-    
+
     # Check documentation
     check_documentation
     echo
-    
+
     log_success "Sanity check completed successfully!"
     log_info "Infrastructure is ready for deployment."
 }

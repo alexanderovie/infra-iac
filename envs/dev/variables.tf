@@ -4,10 +4,15 @@ variable "aws_region" {
   default     = "us-east-1"
 }
 
-variable "cloudflare_api_token" {
-  description = "Cloudflare API token"
+variable "cloudflare_api_key" {
+  description = "Cloudflare API key"
   type        = string
   sensitive   = true
+}
+
+variable "cloudflare_email" {
+  description = "Cloudflare account email"
+  type        = string
 }
 
 variable "domain" {

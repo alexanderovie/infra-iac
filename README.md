@@ -1,288 +1,205 @@
-# Fascinante Digital - Infrastructure as Code
+# 🏗️ Infraestructura como Código - Fascinante Digital
 
-Este repositorio contiene toda la infraestructura de Fascinante Digital gestionada con **Terraform**. Es el **Repo 0 (Identidad y Control)** que centraliza la gestión de infraestructura, DNS, email, y servicios de soporte.
+> **Repo 0 (Identidad y Control)** - Gestión centralizada de infraestructura con OpenTofu
 
-## 🏗️ Arquitectura
+## 🎯 Objetivo
 
-### Módulos de Proveedores
+Este repositorio gestiona la infraestructura base de **Fascinante Digital** usando **OpenTofu (Terraform)**. Proporciona una base sólida y escalable para el despliegue y gestión de recursos en la nube, siguiendo las mejores prácticas de Infrastructure as Code (IaC).
 
-- **`providers/cloudflare/`**: Gestión de DNS y dominios
-- **`providers/aws-ses/`**: Configuración de email con Amazon SES
-- **`providers/aws-core/`**: Recursos básicos de AWS (S3, SQS, IAM)
-- **`providers/github/`**: Gestión de repositorios y secretos (opcional)
-- **`providers/vercel/`**: Proyectos y dominios de Vercel (opcional)
+### 🔧 Problemas que resuelve
 
-### Entornos
+- **Gestión centralizada** de recursos de infraestructura
+- **Versionado** y control de cambios en la infraestructura
+- **Reproducibilidad** de entornos (dev, stage, prod)
+- **Seguridad** con backend remoto y locks distribuidos
+- **Automatización** de despliegues y configuraciones
 
-- **`envs/dev/`**: Entorno de desarrollo
-- **`envs/stage/`**: Entorno de staging
-- **`envs/prod/`**: Entorno de producción
+## 📋 Requisitos Previos
 
-### Bootstrap
-
-- **`bootstrap/`**: Configuración inicial de S3 y DynamoDB para estado de Terraform
-
-## 🚀 Inicio Rápido
-
-### 1. Prerrequisitos
-
-- **Terraform** >= 1.6
-- **AWS CLI** configurado
-- **Cloudflare API Token**
-- Acceso a AWS (S3, DynamoDB, SES)
-- Acceso a Cloudflare (DNS)
-
-### 2. Bootstrap (Solo una vez)
+### Herramientas necesarias
 
 ```bash
-# 1. Ir al directorio bootstrap
-cd bootstrap/
+# OpenTofu (recomendado) o Terraform
+brew install opentofu
 
-# 2. Configurar variables
-cp terraform.tfvars.example terraform.tfvars
-# Editar terraform.tfvars con tus valores
+# AWS CLI
+brew install awscli
 
-# 3. Inicializar y aplicar
-terraform init
-terraform plan
-terraform apply
-
-# 4. Guardar outputs
-terraform output -json > outputs.json
+# Configurar AWS CLI
+aws configure
 ```
 
-### 3. Configurar un Entorno
+### Variables de entorno requeridas
 
 ```bash
-# 1. Ir al directorio del entorno
-cd envs/dev/
+# ==== ⚡️ Configuración AWS ====
+export AWS_ACCESS_KEY_ID="TU_AWS_ACCESS_KEY_ID"
+export AWS_SECRET_ACCESS_KEY="TU_AWS_SECRET_ACCESS_KEY"  # pragma: allowlist secret
+export AWS_REGION="us-east-1"
+export AWS_DEFAULT_REGION="us-east-1"
 
-# 2. Configurar variables
-cp terraform.tfvars.example terraform.tfvars
-# Editar terraform.tfvars con tus valores
+# ==== ⚡️ Configuración Cloudflare ====
+export CLOUDFLARE_API_KEY="TU_CLOUDFLARE_API_KEY"  # pragma: allowlist secret
+export CLOUDFLARE_EMAIL="info@fascinantedigital.com"
 
-# 3. Inicializar con backend
-terraform init -backend-config=backend.hcl
+# ==== ⚡️ Configuración GitHub ====
+export GITHUB_TOKEN="TU_GITHUB_TOKEN"
+export GITHUB_OWNER="alexanderovie"
 
-# 4. Planificar cambios
-terraform plan
-
-# 5. Aplicar cambios
-terraform apply
+# ==== ⚡️ Configuración Vercel ====
+export VERCEL_TOKEN="TU_VERCEL_TOKEN"
+export VERCEL_TEAM_ID="alexanderoviedo"
 ```
 
-## 📋 Configuración por Entorno
+## 📁 Estructura del Repositorio
 
-### Variables Requeridas
-
-Cada entorno necesita estas variables en `terraform.tfvars`:
-
-```hcl
-# AWS Configuration
-aws_region = "us-east-1"
-
-# Cloudflare Configuration
-cloudflare_api_token = "your-cloudflare-api-token"
-
-# Domain Configuration
-domain = "fascinantedigital.com"
-
-# IP Addresses (ajustar según tu infraestructura)
-main_ip = "192.0.2.1"
+```
+infra-iac/
+├── 📁 bootstrap/                 # Creación de backend S3 + DynamoDB
+│   ├── main.tf
+│   ├── variables.tf
+│   └── outputs.tf
+├── 📁 providers/                 # Módulos reutilizables
+│   ├── cloudflare/              # Gestión DNS
+│   ├── aws-ses/                 # Configuración email
+│   ├── aws-core/                # Recursos AWS genéricos
+│   ├── github/                  # Gestión repositorios
+│   └── vercel/                  # Despliegues frontend
+├── 📁 envs/                     # Configuraciones por entorno
+│   ├── dev/                     # Entorno desarrollo
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   ├── backend.hcl
+│   │   └── terraform.tfvars.example
+│   ├── stage/                   # Entorno staging
+│   └── prod/                    # Entorno producción
+├── 📁 secrets/                  # Variables sensibles (NO COMMIT)
+│   └── dev.tfvars
+├── 📁 .github/workflows/        # CI/CD pipelines
+│   ├── terraform-plan.yml
+│   ├── terraform-apply.yml
+│   └── drift-detection.yml
+├── 📁 tools/                    # Configuraciones de herramientas
+│   ├── .tflint.hcl
+│   ├── tfsec-excludes.yml
+│   └── infracost.yml
+└── 📄 README.md
 ```
 
-### Secretos de GitHub
+## 🚀 Comandos Básicos
 
-Configura estos secretos en tu repositorio de GitHub:
-
-- `AWS_ACCESS_KEY_ID`
-- `AWS_SECRET_ACCESS_KEY`
-- `CLOUDFLARE_API_TOKEN`
-
-## 🔧 Uso de Módulos
-
-### Cloudflare
-
-```hcl
-module "cloudflare" {
-  source = "../../providers/cloudflare"
-
-  cloudflare_api_token = var.cloudflare_api_token
-  domain              = "fascinantedigital.com"
-  environment         = "prod"
-
-  a_records = {
-    "@" = {
-      value   = "192.0.2.1"
-      proxied = true
-    }
-  }
-}
-```
-
-### AWS SES
-
-```hcl
-module "ses" {
-  source = "../../providers/aws-ses"
-
-  domain      = "fascinantedigital.com"
-  environment = "prod"
-  aws_region  = "us-east-1"
-}
-```
-
-### AWS Core
-
-```hcl
-module "aws_core" {
-  source = "../../providers/aws-core"
-
-  environment = "prod"
-  aws_region  = "us-east-1"
-
-  s3_buckets = {
-    "assets" = {
-      bucket_name = "fascinante-assets"
-    }
-  }
-}
-```
-
-## 🔄 CI/CD
-
-### Workflows de GitHub Actions
-
-- **`terraform-plan.yml`**: Ejecuta en cada PR
-  - Formato de código
-  - Linting con TFLint
-  - Escaneo de seguridad con TFSec
-  - Plan de Terraform
-  - Comentarios en PR
-
-- **`terraform-apply.yml`**: Ejecuta en main
-  - Aplicación automática de cambios
-  - Aprobación manual opcional
-  - Notificaciones de estado
-
-### Ejecutar Manualmente
+### 1. Inicializar el entorno
 
 ```bash
-# Plan para un entorno específico
-gh workflow run terraform-plan.yml
-
-# Apply para un entorno específico
-gh workflow run terraform-apply.yml -f environment=prod
+cd envs/dev
+terraform init -reconfigure
 ```
 
-## 📚 Documentación Adicional
-
-- **[MIGRATIONS.md](MIGRATIONS.md)**: Guía de migración y importación
-- **[SECURITY.md](SECURITY.md)**: Buenas prácticas de seguridad
-- **[CONTRIBUTING.md](CONTRIBUTING.md)**: Guía de contribución
-- **[bootstrap/README.md](bootstrap/README.md)**: Configuración inicial
-- **[providers/*/README.md](providers/)**: Documentación de módulos
-
-## 🛠️ Herramientas
-
-### TFLint
+### 2. Planificar cambios
 
 ```bash
-# Instalar
-curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
-
-# Ejecutar
-tflint --config tools/.tflint.hcl
+terraform plan -var-file=../../secrets/dev.tfvars -compact-warnings
 ```
 
-### TFSec
+### 3. Aplicar cambios
 
 ```bash
-# Instalar
-curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
-
-# Ejecutar
-tfsec --config-file tools/tfsec-excludes.yml
+terraform apply -var-file=../../secrets/dev.tfvars -auto-approve
 ```
 
-### Infracost
+### 4. Verificar backend remoto
 
 ```bash
-# Instalar
-curl -fsSL https://raw.githubusercontent.com/infracost/infracost/master/scripts/install.sh | sh
+# Verificar state en S3
+aws s3 ls s3://fascinante-digital-terraform-state/dev/
 
-# Ejecutar
-infracost breakdown --config-file tools/infracost.yml
+# Verificar locks en DynamoDB
+aws dynamodb describe-table \
+  --table-name fascinante-digital-terraform-locks \
+  --region us-east-1 \
+  --query 'Table.TableStatus'
 ```
 
-## ⚠️ Advertencias Importantes
+### 5. Destruir recursos (⚠️ CUIDADO)
+
+```bash
+terraform destroy -var-file=../../secrets/dev.tfvars
+```
+
+## 🔒 Buenas Prácticas
 
 ### Seguridad
 
-- **NUNCA** commitees archivos `terraform.tfvars`
-- **NUNCA** incluyas secretos en el código
-- **SIEMPRE** usa secretos de GitHub para valores sensibles
-- **SIEMPRE** revisa los planes antes de aplicar
+- ❌ **NUNCA** subir `*.tfvars` ni claves al repositorio
+- ✅ Usar `.gitignore` con `*.tfstate`, `.terraform/`, `*.tfvars`, `.env`
+- ✅ Rotar claves y tokens regularmente
+- ✅ Usar backend remoto con cifrado
 
-### Estado de Terraform
+### Gestión de Estado
 
-- **NUNCA** elimines el bucket S3 de estado
-- **NUNCA** elimines la tabla DynamoDB de locks
-- **SIEMPRE** usa `terraform import` para recursos existentes
-- **SIEMPRE** haz backup del estado antes de cambios grandes
+- ✅ Backend remoto en S3 con versionado
+- ✅ Locks distribuidos con DynamoDB
+- ✅ State compartido entre miembros del equipo
+- ✅ Backup automático del state
 
-### Cambios Manuales
+### Desarrollo
 
-- **NUNCA** modifiques recursos manualmente en la consola
-- **SIEMPRE** usa Terraform para todos los cambios
-- **SIEMPRE** documenta cambios en PRs
+- ✅ Usar branches para cambios de infraestructura
+- ✅ Revisar planes antes de aplicar
+- ✅ Documentar cambios importantes
+- ✅ Usar tags consistentes en recursos
 
-## 🆘 Solución de Problemas
+## 📊 Estado Actual
 
-### Error de Backend
+### ✅ Infraestructura Desplegada
 
-```bash
-# Si el backend no existe, inicializa sin backend
-terraform init -backend=false
+- **Backend remoto**: S3 + DynamoDB configurado y funcionando
+- **DNS Cloudflare**: Registros gestionados con Terraform
+- **Credenciales**: AWS, Cloudflare, GitHub, Vercel configuradas
+- **State management**: Remoto y seguro
 
-# Luego migra al backend
-terraform init -backend-config=backend.hcl
-```
+### 🌐 Recursos DNS Activos
 
-### Error de Estado
+- `fascinantedigital.com` → A record (192.0.2.1)
+- `www.fascinantedigital.com` → CNAME (cname.vercel-dns.com)
+- `api.fascinantedigital.com` → CNAME (fascinantedigital.com)
+- SPF record para verificación de email
+- MX record para configuración de correo
 
-```bash
-# Listar recursos en el estado
-terraform state list
+## 🔮 Próximos Pasos
 
-# Mostrar un recurso específico
-terraform state show aws_s3_bucket.example
+### Módulos Pendientes
 
-# Importar un recurso existente
-terraform import aws_s3_bucket.example bucket-name
-```
+1. **AWS SES** - Configuración de email transaccional
+2. **GitHub** - Gestión automática de repositorios
+3. **Vercel** - Despliegues automáticos de frontend
+4. **AWS Core** - Recursos adicionales (SQS, IAM, etc.)
 
-### Error de Providers
+### Mejoras Planificadas
 
-```bash
-# Actualizar providers
-terraform init -upgrade
+- [ ] Implementar módulo de monitoreo
+- [ ] Configurar alertas de costos
+- [ ] Añadir validaciones de seguridad
+- [ ] Implementar drift detection automático
 
-# Limpiar cache
-rm -rf .terraform/
-terraform init
-```
+## 🛠️ Herramientas Integradas
+
+- **OpenTofu**: Gestión de infraestructura
+- **TFLint**: Linting de código Terraform
+- **Trivy**: Análisis de seguridad
+- **Infracost**: Estimación de costos
+- **Pre-commit**: Hooks de calidad de código
 
 ## 📞 Soporte
 
-- **Issues**: Usa GitHub Issues para reportar problemas
-- **Discusiones**: Usa GitHub Discussions para preguntas
-- **Documentación**: Consulta los README de cada módulo
+Para dudas o problemas con la infraestructura:
 
-## 📄 Licencia
-
-Este proyecto está bajo la licencia MIT. Ver [LICENSE](LICENSE) para más detalles.
+- **Email**: [info@fascinantedigital.com](mailto:info@fascinantedigital.com)
+- **Equipo**: Platform Team
+- **Documentación**: Ver archivos en `/docs` (próximamente)
 
 ---
 
-**Fascinante Digital** - Infraestructura como Código
+> **⚠️ Importante**: Este repositorio contiene configuración de infraestructura crítica. Siempre revisar los planes antes de aplicar cambios y mantener las credenciales seguras.
+
+**Última actualización**: Septiembre 2025 | **Versión**: SÚPER-ÉLITE

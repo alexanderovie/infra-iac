@@ -11,9 +11,9 @@ output "projects" {
 }
 
 output "domains" {
-  description = "Map of Vercel domain information"
+  description = "Map of Vercel project domain information"
   value = {
-    for k, v in vercel_domain.domains : k => {
+    for k, v in vercel_project_domain.domains : k => {
       id         = v.id
       domain     = v.domain
       project_id = v.project_id

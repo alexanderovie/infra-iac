@@ -208,3 +208,48 @@ serverless_function_regions = ["iad1", "sfo1"]
 - **Límites**: Vercel tiene límites en el número de proyectos
 - **Costos**: Los proyectos pueden tener costos asociados
 - **Team**: Especifica `team_id` para organizaciones
+
+<!-- BEGIN_TF_DOCS -->
+## Requirements
+
+| Name | Version |
+|------|---------|
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.6 |
+| <a name="requirement_vercel"></a> [vercel](#requirement\_vercel) | ~> 1.0 |
+
+## Providers
+
+| Name | Version |
+|------|---------|
+| <a name="provider_vercel"></a> [vercel](#provider\_vercel) | 1.14.1 |
+
+## Modules
+
+No modules.
+
+## Resources
+
+| Name | Type |
+|------|------|
+| [vercel_project.projects](https://registry.terraform.io/providers/vercel/vercel/latest/docs/resources/project) | resource |
+| [vercel_project_domain.domains](https://registry.terraform.io/providers/vercel/vercel/latest/docs/resources/project_domain) | resource |
+| [vercel_project_environment_variable.env_vars](https://registry.terraform.io/providers/vercel/vercel/latest/docs/resources/project_environment_variable) | resource |
+
+## Inputs
+
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| <a name="input_domains"></a> [domains](#input\_domains) | Map of Vercel domains to create | <pre>map(object({<br/>    domain  = string<br/>    project = string<br/>  }))</pre> | `{}` | no |
+| <a name="input_environment"></a> [environment](#input\_environment) | Environment name (dev, stage, prod) | `string` | n/a | yes |
+| <a name="input_projects"></a> [projects](#input\_projects) | Map of Vercel projects to create | <pre>map(object({<br/>    name = string<br/>    git_repository = optional(object({<br/>      type = string<br/>      repo = string<br/>    }), null)<br/><br/>    # Build settings<br/>    build_command    = optional(string, null)<br/>    output_directory = optional(string, null)<br/>    install_command  = optional(string, null)<br/>    dev_command      = optional(string, null)<br/>    ignore_command   = optional(string, null)<br/>    root_directory   = optional(string, null)<br/><br/>    # Framework<br/>    framework = optional(string, null)<br/><br/>    # Environment variables (inline)<br/>    environment_variables = optional(list(object({<br/>      key    = string<br/>      value  = string<br/>      target = list(string)<br/>    })), [])<br/><br/>    # Additional environment variables<br/>    additional_env_vars = optional(list(object({<br/>      key    = string<br/>      value  = string<br/>      target = list(string)<br/>    })), [])<br/><br/>    # Domains<br/>    domains = optional(list(string), [])<br/><br/>    # Serverless function regions<br/>    serverless_function_regions = optional(list(string), ["iad1"])<br/>  }))</pre> | `{}` | no |
+| <a name="input_team_id"></a> [team\_id](#input\_team\_id) | Vercel team ID (optional) | `string` | `null` | no |
+| <a name="input_vercel_api_token"></a> [vercel\_api\_token](#input\_vercel\_api\_token) | Vercel API token | `string` | n/a | yes |
+
+## Outputs
+
+| Name | Description |
+|------|-------------|
+| <a name="output_domains"></a> [domains](#output\_domains) | Map of Vercel project domain information |
+| <a name="output_environment_variables"></a> [environment\_variables](#output\_environment\_variables) | Map of environment variables |
+| <a name="output_projects"></a> [projects](#output\_projects) | Map of Vercel project information |
+<!-- END_TF_DOCS -->

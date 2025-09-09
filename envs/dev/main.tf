@@ -1,121 +1,93 @@
-# Development environment configuration
-# This file configures the development environment for Fascinante Digital
+# SÚPER-ÉLITE Configuration for Fascinante Digital Infrastructure
+# This file demonstrates the complete SÚPER-ÉLITE setup
 
 terraform {
   required_version = ">= 1.10"
+
+  backend "s3" {
+    # Configuration will be provided via backend.hcl
+  }
+
   required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.80"
-    }
     cloudflare = {
       source  = "cloudflare/cloudflare"
       version = "~> 5.5"
     }
   }
-
-  backend "s3" {
-    # This will be configured via backend.hcl
-  }
 }
 
-# Cloudflare module
-module "cloudflare" {
-  source = "../../providers/cloudflare"
-
-  cloudflare_api_token = var.cloudflare_api_token
-  domain               = var.domain
-  environment          = "dev"
-
-  a_records = {
-    "@" = {
-      value   = var.main_ip
-      proxied = true
-      comment = "Main domain A record (dev)"
-    }
-    "www" = {
-      value   = var.main_ip
-      proxied = true
-      comment = "WWW subdomain (dev)"
-    }
-    "dev" = {
-      value   = var.dev_ip
-      proxied = true
-      comment = "Development subdomain"
-    }
-  }
-
-  cname_records = {
-    "api-dev" = {
-      value   = "api-dev.fascinantedigital.com"
-      proxied = false
-      comment = "Development API subdomain"
-    }
-  }
-
-  txt_records = {
-    "@" = {
-      value   = "v=spf1 include:_spf.google.com ~all"
-      comment = "SPF record for email"
-    }
-  }
+# Provider configuration
+provider "cloudflare" {
+  api_key = var.cloudflare_api_key
+  email   = var.cloudflare_email
 }
 
-# AWS SES module
-module "ses" {
-  source = "../../providers/aws-ses"
-
-  domain      = var.domain
-  environment = "dev"
-  aws_region  = var.aws_region
-
-  # Optional: Configure MAIL FROM if needed
-  # mail_from_subdomain = "mail"
-  # route53_zone_id     = var.route53_zone_id
+# Cloudflare zone lookup
+data "cloudflare_zone" "main" {
+  zone_id = "6d7328e7f3edb975ef1f52cdb29178b7"
 }
 
-# AWS Core module
-module "aws_core" {
-  source = "../../providers/aws-core"
+# DNS Records - SÚPER-ÉLITE Setup
+resource "cloudflare_dns_record" "www" {
+  zone_id = "6d7328e7f3edb975ef1f52cdb29178b7"
+  name    = "www"
+  content = "cname.vercel-dns.com"
+  type    = "CNAME"
+  ttl     = 1
+}
 
-  environment = "dev"
-  aws_region  = var.aws_region
+resource "cloudflare_dns_record" "root" {
+  zone_id = "6d7328e7f3edb975ef1f52cdb29178b7"
+  name    = "@"
+  content = "192.0.2.1"
+  type    = "A"
+  ttl     = 300
+}
 
-  s3_buckets = {
-    "dev-assets" = {
-      bucket_name          = "fascinante-dev-assets"
-      versioning_enabled   = true
-      encryption_algorithm = "AES256"
-      tags = {
-        Purpose = "Development assets"
-        Type    = "Static files"
-      }
-    }
-    "dev-backups" = {
-      bucket_name          = "fascinante-dev-backups"
-      versioning_enabled   = true
-      encryption_algorithm = "AES256"
-      tags = {
-        Purpose = "Development backups"
-        Type    = "Backup storage"
-      }
-    }
-  }
+resource "cloudflare_dns_record" "api" {
+  zone_id = "6d7328e7f3edb975ef1f52cdb29178b7"
+  name    = "api"
+  content = "fascinantedigital.com"
+  type    = "CNAME"
+  ttl     = 1
+  proxied = true
+}
 
-  sqs_queues = {
-    "dev-email-queue" = {
-      queue_name                 = "fascinante-dev-email-queue"
-      delay_seconds              = 0
-      max_message_size           = 262144
-      message_retention_seconds  = 1209600
-      visibility_timeout_seconds = 30
-      dead_letter_queue = {
-        max_receive_count = 3
-      }
-      tags = {
-        Purpose = "Development email processing"
-        Type    = "Message queue"
-      }
-    }
+resource "cloudflare_dns_record" "verification" {
+  zone_id = "6d7328e7f3edb975ef1f52cdb29178b7"
+  name    = "@"
+  content = "v=spf1 include:_spf.google.com ~all"
+  type    = "TXT"
+  ttl     = 300
+}
+
+resource "cloudflare_dns_record" "mx" {
+  zone_id  = "6d7328e7f3edb975ef1f52cdb29178b7"
+  name     = "@"
+  content  = "mail.fascinantedigital.com"
+  type     = "MX"
+  priority = 10
+  ttl      = 300
+}
+
+# SÚPER-ÉLITE Outputs
+output "zone_id" {
+  description = "Cloudflare zone ID"
+  value       = data.cloudflare_zone.main.id
+}
+
+output "zone_name" {
+  description = "Cloudflare zone name"
+  value       = data.cloudflare_zone.main.name
+}
+
+output "dns_records" {
+  description = "SÚPER-ÉLITE DNS records created"
+  value = {
+    www          = cloudflare_dns_record.www.id
+    root         = cloudflare_dns_record.root.id
+    api          = cloudflare_dns_record.api.id
+    verification = cloudflare_dns_record.verification.id
+    mx           = cloudflare_dns_record.mx.id
   }
 }

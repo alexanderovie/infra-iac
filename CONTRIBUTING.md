@@ -340,7 +340,7 @@ Cualquier información adicional relevante.
 - **GitHub Issues**: Para bugs y feature requests
 - **GitHub Discussions**: Para preguntas generales
 - **Slack**: #infra-team para discusiones rápidas
-- **Email**: infra@fascinantedigital.com para temas urgentes
+- **Email**: [info@fascinantedigital.com](mailto:info@fascinantedigital.com) para temas urgentes
 
 ### Horarios de Soporte
 

@@ -31,19 +31,6 @@ resource "vercel_project" "projects" {
   # Framework
   framework = each.value.framework
 
-  # Environment variables
-  dynamic "environment" {
-    for_each = each.value.environment_variables
-    content {
-      key    = environment.key
-      value  = environment.value
-      target = environment.value.target
-    }
-  }
-
-  # Domains
-  domains = each.value.domains
-
   # Team (if specified)
   team_id = var.team_id
 
@@ -53,13 +40,15 @@ resource "vercel_project" "projects" {
   # Ignore command
   ignore_command = each.value.ignore_command
 
-  # Serverless function regions
-  serverless_function_regions = each.value.serverless_function_regions
+  # Serverless function region (singular)
+  serverless_function_region = each.value.serverless_function_region
 }
 
-# Vercel domains
-resource "vercel_domain" "domains" {
-  for_each = var.domains
+# Vercel project domains (using vercel_project_domain)
+resource "vercel_project_domain" "domains" {
+  for_each = {
+    for domain in local.all_domains : "${domain.project}.${domain.domain}" => domain
+  }
 
   domain     = each.value.domain
   project_id = vercel_project.projects[each.value.project].id
@@ -83,11 +72,19 @@ resource "vercel_project_environment_variable" "env_vars" {
   team_id = var.team_id
 }
 
-# Local values for flattening environment variables
+# Local values for flattening environment variables and domains
 locals {
   all_env_vars = flatten([
     for project_name, project in var.projects : [
       for env_var in project.additional_env_vars : merge(env_var, {
+        project = project_name
+      })
+    ]
+  ])
+
+  all_domains = flatten([
+    for project_name, project in var.projects : [
+      for domain in project.domains : merge(domain, {
         project = project_name
       })
     ]

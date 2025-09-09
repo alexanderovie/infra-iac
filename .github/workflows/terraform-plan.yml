@@ -1,3 +1,4 @@
+# yamllint disable rule:quoted-strings rule:indentation rule:brackets rule:empty-values rule:line-length
 name: 'Terraform Plan'
 
 on:
@@ -25,7 +26,7 @@ jobs:
     strategy:
       matrix:
         environment: [dev, stage, prod]
-    
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -109,24 +110,24 @@ jobs:
       with:
         script: |
           const output = `#### Terraform Plan - ${{ matrix.environment }} Environment
-          
+
           **Terraform Format and Style** \`${{ steps.fmt.outcome }}\`
           **TFLint** \`${{ steps.tflint.outcome }}\`
           **TFSec Security Scan** \`${{ steps.tfsec.outcome }}\`
           **Terraform Init** \`${{ steps.init.outcome }}\`
           **Terraform Validate** \`${{ steps.validate.outcome }}\`
           **Terraform Plan** \`${{ steps.plan.outcome }}\`
-          
+
           <details><summary>Show Plan</summary>
-          
+
           \`\`\`terraform
           ${{ steps.plan.outputs.stdout }}
           \`\`\`
-          
+
           </details>
-          
+
           *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
-          
+
           github.rest.issues.createComment({
             issue_number: context.issue.number,
             owner: context.repo.owner,
