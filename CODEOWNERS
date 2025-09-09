@@ -1,0 +1,38 @@
+# Global owners
+* @fascinante-digital/infra-team
+
+# Critical infrastructure files
+/bootstrap/ @fascinante-digital/infra-leads
+/envs/prod/ @fascinante-digital/infra-leads
+/.github/workflows/ @fascinante-digital/infra-leads
+
+# Provider modules
+/providers/cloudflare/ @fascinante-digital/dns-team
+/providers/aws-ses/ @fascinante-digital/email-team
+/providers/aws-core/ @fascinante-digital/aws-team
+/providers/github/ @fascinante-digital/devops-team
+/providers/vercel/ @fascinante-digital/frontend-team
+
+# Environment configurations
+/envs/dev/ @fascinante-digital/infra-team
+/envs/stage/ @fascinante-digital/infra-team @fascinante-digital/infra-leads
+/envs/prod/ @fascinante-digital/infra-leads
+
+# Security and secrets
+/secrets/ @fascinante-digital/infra-leads
+SECURITY.md @fascinante-digital/infra-leads @fascinante-digital/security-team
+
+# CI/CD and automation
+/.github/ @fascinante-digital/infra-leads @fascinante-digital/devops-team
+/Makefile @fascinante-digital/infra-leads
+/.pre-commit-config.yaml @fascinante-digital/infra-leads
+
+# Documentation
+*.md @fascinante-digital/infra-team
+/README.md @fascinante-digital/infra-leads
+/MIGRATIONS.md @fascinante-digital/infra-leads
+/CONTRIBUTING.md @fascinante-digital/infra-leads
+
+# Tooling configuration
+/tools/ @fascinante-digital/infra-team
+/.sops.yaml @fascinante-digital/infra-leads

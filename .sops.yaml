@@ -1,0 +1,22 @@
+# SOPS configuration for Fascinante Digital
+# This file configures SOPS encryption for sensitive files
+
+creation_rules:
+  - path_regex: \.env$
+    pgp: >-
+      FINGERPRINT1,
+      FINGERPRINT2
+    age: >-
+      age1example1example1example1example1example1example1example1example1example1example1example1example1
+  - path_regex: \.tfvars$
+    pgp: >-
+      FINGERPRINT1,
+      FINGERPRINT2
+    age: >-
+      age1example1example1example1example1example1example1example1example1example1example1example1example1
+  - path_regex: secrets/.*
+    pgp: >-
+      FINGERPRINT1,
+      FINGERPRINT2
+    age: >-
+      age1example1example1example1example1example1example1example1example1example1example1example1example1

@@ -1,0 +1,18 @@
+# Staging environment variables
+# Copy this file to terraform.tfvars and fill in your values
+
+# AWS Configuration
+aws_region = "us-east-1"
+
+# Cloudflare Configuration
+cloudflare_api_token = "your-cloudflare-api-token-here"
+
+# Domain Configuration
+domain = "fascinantedigital.com"
+
+# IP Addresses
+main_ip  = "192.0.2.1"  # Replace with your main server IP
+stage_ip = "192.0.2.3"  # Replace with your staging server IP
+
+# Optional: Route53 Zone ID for automatic DNS record creation
+# route53_zone_id = "Z1234567890"

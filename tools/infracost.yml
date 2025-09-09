@@ -1,0 +1,17 @@
+version: 0.1
+
+# Infracost configuration for Fascinante Digital
+# This file configures cost estimation settings
+
+# Global settings
+currency: USD
+
+# Terraform settings
+terraform_plan_flags: "-var-file=terraform.tfvars"
+
+# Cost estimation settings
+show_skipped: false
+show_succeeded: true
+
+# Output settings
+format: table
