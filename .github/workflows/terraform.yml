@@ -1,11 +1,32 @@
 name: Terraform Plan (1Password)
+
 on:
+  pull_request:
+    paths:
+      - "**/*.tf"
+      - "modules/**"
+      - "env/**"
+      - ".terraform-version"
+      - ".github/workflows/terraform.yml"
+  push:
+    branches: [main]
+    paths:
+      - "**/*.tf"
+      - "modules/**"
+      - "env/**"
+      - ".terraform-version"
+      - ".github/workflows/terraform.yml"
   workflow_dispatch:
-  push: { branches: [main] }
+
+concurrency:
+  group: terraform-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   plan:
     runs-on: ubuntu-latest
-    permissions: { contents: read }
+    permissions:
+      contents: read
     env:
       OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.ONEPASSWORD_SERVICE_ACCOUNT_TOKEN }}
     steps:
