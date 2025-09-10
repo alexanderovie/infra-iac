@@ -1,5 +1,6 @@
 # SÚPER-ÉLITE Configuration for Fascinante Digital Infrastructure
 # This file demonstrates the complete SÚPER-ÉLITE setup
+# Updated: September 2025 - Ready for CI/CD validation
 
 terraform {
   required_version = ">= 1.10"
@@ -37,19 +38,21 @@ data "cloudflare_zone" "main" {
 
 # DNS Records - SÚPER-ÉLITE Setup
 resource "cloudflare_dns_record" "www" {
-  zone_id = "6d7328e7f3edb975ef1f52cdb29178b7"
+  zone_id = data.cloudflare_zone.main.zone_id
   name    = "www"
-  content = "cname.vercel-dns.com"
   type    = "CNAME"
+  content = "cname.vercel-dns.com"
+  proxied = true
   ttl     = 1
 }
 
 resource "cloudflare_dns_record" "root" {
-  zone_id = "6d7328e7f3edb975ef1f52cdb29178b7"
+  zone_id = data.cloudflare_zone.main.zone_id
   name    = "@"
-  content = "192.0.2.1"
-  type    = "A"
-  ttl     = 300
+  type    = "CNAME"
+  content = "cname.vercel-dns.com"
+  proxied = true
+  ttl     = 1
 }
 
 resource "cloudflare_dns_record" "api" {
@@ -84,13 +87,53 @@ resource "cloudflare_dns_record" "mx" {
 
 # DNS Record for staging subdomain
 resource "cloudflare_dns_record" "stage" {
-  zone_id = "6d7328e7f3edb975ef1f52cdb29178b7"
+  zone_id = data.cloudflare_zone.main.zone_id
   name    = "stage"
   content = "cname.vercel-dns.com"
   type    = "CNAME"
   ttl     = 1
   proxied = true
 }
+
+# Cloudflare Redirect Rules (SÚPER-ÉLITE - Modern approach)
+# Migrated from deprecated Page Rules to Redirect Rules
+resource "cloudflare_ruleset" "redirect_www_to_root" {
+  zone_id = data.cloudflare_zone.main.zone_id
+  name    = "Redirect www to root (SÚPER-ÉLITE)"
+  kind    = "zone"
+  phase   = "http_request_dynamic_redirect"
+
+  rules = [
+    {
+      description = "301 www → root (SÚPER-ÉLITE)"
+      expression  = "(http.host eq \"www.fascinantedigital.com\")"
+      action      = "redirect"
+      action_parameters = {
+        from_value = {
+          status_code = 301
+          target_url = {
+            value = "https://fascinantedigital.com"
+          }
+          preserve_query_string = true
+        }
+      }
+      enabled = true
+    }
+  ]
+}
+
+# Legacy Page Rule (to be removed after migration)
+# resource "cloudflare_page_rule" "redirect_www_to_root" {
+#   zone_id = data.cloudflare_zone.main.zone_id
+#   target  = "www.fascinantedigital.com/*"
+#   status  = "active"
+#   actions = {
+#     forwarding_url = {
+#       url         = "https://fascinantedigital.com/$1"
+#       status_code = 301
+#     }
+#   }
+# }
 
 # SÚPER-ÉLITE Outputs
 output "zone_id" {

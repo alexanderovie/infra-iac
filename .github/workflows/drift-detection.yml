@@ -1,135 +1,108 @@
-# yamllint disable rule:quoted-strings rule:indentation rule:brackets rule:empty-values rule:line-length
-name: 'Drift Detection'
-
+name: drift-detection
 on:
   schedule:
-    # Run every night at 2 AM UTC
-    - cron: '0 2 * * *'
-  workflow_dispatch:
-
-env:
-  TF_VERSION: '1.10.0'
+    - cron: "0 2 * * 1" # Lunes a las 2 AM UTC
+  workflow_dispatch: # Manual trigger
 
 jobs:
-  drift-detection:
-    name: 'Drift Detection'
+  drift-check:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        environment: [dev, stage, prod]
+    permissions:
+      contents: read
+      pull-requests: write
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
-      with:
-        terraform_version: ${{ env.TF_VERSION }}
+      - name: Setup OpenTofu
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: 1.10.6
+          tofu_arch: amd64
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
+      - name: Cache OpenTofu
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.terraform.d/plugins
+            ~/.opentofu.d/plugins
+          key: ${{ runner.os }}-opentofu-${{ hashFiles('**/.terraform.lock.hcl') }}
+          restore-keys: |
+            ${{ runner.os }}-opentofu-
 
-    - name: Terraform Init
-      run: terraform init -backend-config=backend.hcl
-      working-directory: envs/${{ matrix.environment }}
+      - name: Cargar secrets
+        run: |
+          echo "AWS_REGION=us-east-1" >> $GITHUB_ENV
+          echo "TF_VAR_environment=dev" >> $GITHUB_ENV
 
-    - name: Terraform Plan
-      id: plan
-      run: |
-        terraform plan -no-color -out=tfplan > plan_output.txt 2>&1
-        echo "plan_exit_code=$?" >> $GITHUB_OUTPUT
-      working-directory: envs/${{ matrix.environment }}
+      - name: Terraform Init
+        working-directory: envs/dev
+        run: |
+          tofu init -input=false
 
-    - name: Check for Drift
-      id: drift_check
-      run: |
-        if [ "${{ steps.plan.outputs.plan_exit_code }}" != "0" ]; then
-          echo "drift_detected=true" >> $GITHUB_OUTPUT
-          echo "Drift detected in ${{ matrix.environment }} environment"
-        else
-          echo "drift_detected=false" >> $GITHUB_OUTPUT
-          echo "No drift detected in ${{ matrix.environment }} environment"
-        fi
+      - name: Check for Drift
+        working-directory: envs/dev
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
+          CLOUDFLARE_API_KEY: ${{ secrets.CLOUDFLARE_API_KEY }}
+        run: |
+          tofu plan -detailed-exitcode -no-color > drift-check.txt
+          exit_code=$?
 
-    - name: Create Drift Issue
-      if: steps.drift_check.outputs.drift_detected == 'true'
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const planOutput = require('fs').readFileSync('envs/${{ matrix.environment }}/plan_output.txt', 'utf8');
+          if [ $exit_code -eq 2 ]; then
+            echo "DRIFT_DETECTED=true" >> $GITHUB_ENV
+            echo "❌ Infrastructure drift detected!"
+            cat drift-check.txt
+          elif [ $exit_code -eq 0 ]; then
+            echo "DRIFT_DETECTED=false" >> $GITHUB_ENV
+            echo "✅ No infrastructure drift detected"
+          else
+            echo "DRIFT_DETECTED=error" >> $GITHUB_ENV
+            echo "❌ Error checking for drift"
+            cat drift-check.txt
+            exit 1
+          fi
 
-          const issueTitle = `🚨 Infrastructure Drift Detected - ${{ matrix.environment }} Environment`;
-          const issueBody = `## Drift Detection Alert
+      - name: Create Drift Report
+        if: env.DRIFT_DETECTED == 'true'
+        run: |
+          echo "## 🚨 Infrastructure Drift Detected" > drift-report.md
+          echo "" >> drift-report.md
+          echo "**Date:** $(date)" >> drift-report.md
+          echo "**Environment:** dev" >> drift-report.md
+          echo "" >> drift-report.md
+          echo "### Changes detected:" >> drift-report.md
+          echo '```' >> drift-report.md
+          cat drift-check.txt >> drift-report.md
+          echo '```' >> drift-report.md
 
-          **Environment:** ${{ matrix.environment }}
-          **Date:** ${new Date().toISOString()}
-          **Workflow:** [Drift Detection](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+      - name: Create Issue for Drift
+        if: env.DRIFT_DETECTED == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const driftReport = fs.readFileSync('drift-report.md', 'utf8');
 
-          ### Terraform Plan Output
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Infrastructure Drift Detected - Dev Environment',
+              body: driftReport,
+              labels: ['drift', 'infrastructure', 'dev', 'urgent']
+            });
 
-          \`\`\`terraform
-          ${planOutput}
-          \`\`\`
-
-          ### Next Steps
-
-          1. Review the plan output above
-          2. Investigate the cause of the drift
-          3. Apply the changes if they are expected
-          4. Close this issue once resolved
-
-          ### Labels
-          - drift-detection
-          - ${{ matrix.environment }}
-          - infrastructure
-
-          ---
-          *This issue was automatically created by the drift detection workflow.*`;
-
-          // Check if issue already exists
-          const existingIssues = await github.rest.issues.listForRepo({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            labels: 'drift-detection',
-            state: 'open'
-          });
-
-          const existingIssue = existingIssues.data.find(issue =>
-            issue.title.includes('${{ matrix.environment }} Environment')
-          );
-
-          if (existingIssue) {
-            console.log(`Issue already exists: ${existingIssue.html_url}`);
-            return;
-          }
-
-          // Create new issue
-          const issue = await github.rest.issues.create({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            title: issueTitle,
-            body: issueBody,
-            labels: ['drift-detection', '${{ matrix.environment }}', 'infrastructure']
-          });
-
-          console.log(`Created drift detection issue: ${issue.data.html_url}`);
-
-    - name: Update Last Check
-      run: |
-        echo "Last drift check: $(date)" > last_check_${{ matrix.environment }}.txt
-        echo "Environment: ${{ matrix.environment }}" >> last_check_${{ matrix.environment }}.txt
-        echo "Drift detected: ${{ steps.drift_check.outputs.drift_detected }}" >> last_check_${{ matrix.environment }}.txt
-
-    - name: Upload Check Results
-      uses: actions/upload-artifact@v4
-      with:
-        name: drift-check-${{ matrix.environment }}
-        path: |
-          envs/${{ matrix.environment }}/plan_output.txt
-          last_check_${{ matrix.environment }}.txt
-        retention-days: 30
+      - name: Upload Drift Report
+        if: env.DRIFT_DETECTED == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: drift-report
+          path: |
+            drift-check.txt
+            drift-report.md
+          retention-days: 30
