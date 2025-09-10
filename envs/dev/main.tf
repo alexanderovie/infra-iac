@@ -3,7 +3,7 @@
 # Updated: September 2025 - Ready for CI/CD validation
 
 terraform {
-  required_version = ">= 1.10"
+  required_version = ">= 1.9"
 
   backend "s3" {
     # Configuration will be provided via backend.hcl
