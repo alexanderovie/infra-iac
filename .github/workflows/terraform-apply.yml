@@ -1,97 +1,89 @@
 # yamllint disable rule:quoted-strings rule:indentation rule:brackets rule:empty-values rule:line-length
-name: 'Terraform Apply'
+name: "Terraform Apply"
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
-      - 'envs/**'
-      - 'providers/**'
-      - '.github/workflows/terraform-apply.yml'
+      - "envs/**"
+      - "providers/**"
+      - ".github/workflows/terraform-apply.yml"
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Environment to apply'
+        description: "Environment to apply"
         required: true
-        default: 'dev'
+        default: "dev"
         type: choice
         options:
           - dev
           - stage
           - prod
       auto_approve:
-        description: 'Auto approve the apply'
+        description: "Auto approve the apply"
         required: false
         default: false
         type: boolean
 
 env:
-  TF_VERSION: '1.6.0'
+  TF_VERSION: "1.6.0"
 
 jobs:
   terraform-apply:
-    name: 'Terraform Apply'
+    name: "Terraform Apply"
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'dev' }}
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
-      with:
-        terraform_version: ${{ env.TF_VERSION }}
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
 
-    - name: Download Plan Artifact
-      if: github.event_name == 'push'
-      uses: actions/download-artifact@v4
-      with:
-        name: terraform-plan-${{ github.event.inputs.environment || 'dev' }}
-        path: envs/${{ github.event.inputs.environment || 'dev' }}/tfplan
+      - name: Terraform Init
+        run: terraform init -backend-config=backend.hcl
+        working-directory: envs/${{ github.event.inputs.environment || 'dev' }}
 
-    - name: Terraform Init
-      run: terraform init -backend-config=backend.hcl
-      working-directory: envs/${{ github.event.inputs.environment || 'dev' }}
+      - name: Terraform Plan
+        run: terraform plan -no-color -out=tfplan
+        working-directory: envs/${{ github.event.inputs.environment || 'dev' }}
 
-    - name: Terraform Plan
-      if: github.event_name == 'workflow_dispatch'
-      run: terraform plan -no-color -out=tfplan
-      working-directory: envs/${{ github.event.inputs.environment || 'dev' }}
+      - name: Terraform Apply
+        if: github.event.inputs.auto_approve == 'true' || github.event_name == 'push'
+        run: terraform apply -auto-approve tfplan
+        working-directory: envs/${{ github.event.inputs.environment || 'dev' }}
 
-    - name: Terraform Apply
-      if: github.event.inputs.auto_approve == 'true' || github.event_name == 'push'
-      run: terraform apply -auto-approve tfplan
-      working-directory: envs/${{ github.event.inputs.environment || 'dev' }}
+      - name: Terraform Apply (Manual Approval)
+        if: github.event.inputs.auto_approve != 'true' && github.event_name == 'workflow_dispatch'
+        run: terraform apply tfplan
+        working-directory: envs/${{ github.event.inputs.environment || 'dev' }}
 
-    - name: Terraform Apply (Manual Approval)
-      if: github.event.inputs.auto_approve != 'true' && github.event_name == 'workflow_dispatch'
-      run: terraform apply tfplan
-      working-directory: envs/${{ github.event.inputs.environment || 'dev' }}
+      - name: Terraform Output
+        run: terraform output -json
+        working-directory: envs/${{ github.event.inputs.environment || 'dev' }}
 
-    - name: Terraform Output
-      run: terraform output -json
-      working-directory: envs/${{ github.event.inputs.environment || 'dev' }}
+      - name: Notify Success
+        if: success()
+        run: |
+          echo "✅ Terraform apply completed successfully for ${{ github.event.inputs.environment || 'dev' }} environment"
+          echo "Environment: ${{ github.event.inputs.environment || 'dev' }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Actor: ${{ github.actor }}"
 
-    - name: Notify Success
-      if: success()
-      run: |
-        echo "✅ Terraform apply completed successfully for ${{ github.event.inputs.environment || 'dev' }} environment"
-        echo "Environment: ${{ github.event.inputs.environment || 'dev' }}"
-        echo "Commit: ${{ github.sha }}"
-        echo "Actor: ${{ github.actor }}"
-
-    - name: Notify Failure
-      if: failure()
-      run: |
-        echo "❌ Terraform apply failed for ${{ github.event.inputs.environment || 'dev' }} environment"
-        echo "Environment: ${{ github.event.inputs.environment || 'dev' }}"
-        echo "Commit: ${{ github.sha }}"
-        echo "Actor: ${{ github.actor }}"
+      - name: Notify Failure
+        if: failure()
+        run: |
+          echo "❌ Terraform apply failed for ${{ github.event.inputs.environment || 'dev' }} environment"
+          echo "Environment: ${{ github.event.inputs.environment || 'dev' }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Actor: ${{ github.actor }}"
