@@ -14,6 +14,8 @@ export AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-east-1}"
 # Cloudflare
 CLOUDFLARE_API_TOKEN="$(op_read "op://$VAULT/Cloudflare - Prod/API Token")"
 export CLOUDFLARE_API_TOKEN
+export TF_VAR_cloudflare_api_token="$CLOUDFLARE_API_TOKEN"
+export TF_VAR_cloudflare_email="${CLOUDFLARE_EMAIL:-info@fascinantedigital.com}"
 
 # GitHub
 GITHUB_TOKEN="$(op_read "op://$VAULT/GitHub - PAT/Token")"

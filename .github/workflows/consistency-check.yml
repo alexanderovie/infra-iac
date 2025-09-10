@@ -1,0 +1,107 @@
+name: Consistency Check (SÚPER-ÉLITE)
+
+on:
+  schedule:
+    # Ejecutar diariamente a las 6:00 AM UTC (2:00 AM EST)
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  consistency:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      actions: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup 1Password CLI
+        uses: 1password/install-cli-action@v1
+        with:
+          version: 2.24.0
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.5
+
+      - name: Setup GitHub CLI
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.21"
+
+      - name: Install GitHub CLI
+        run: |
+          go install github.com/cli/cli/cmd/gh@latest
+          echo "${{ github.token }}" | gh auth login --with-token
+
+      - name: Run Consistency Check
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.ONEPASSWORD_SERVICE_ACCOUNT_TOKEN }}
+        run: |
+          # Crear directorio de logs
+          mkdir -p logs
+
+          # Ejecutar mantenimiento
+          ./scripts/maintain-consistency.sh > logs/consistency-check.log 2>&1
+
+          # Verificar si hay errores críticos
+          if grep -q "❌" logs/consistency-check.log; then
+            echo "❌ Errores críticos encontrados"
+            cat logs/consistency-check.log
+            exit 1
+          else
+            echo "✅ Consistencia verificada"
+            cat logs/consistency-check.log
+          fi
+
+      - name: Auto-merge Dependabot PRs
+        if: success()
+        run: |
+          # Obtener PRs de dependabot listos para mergear
+          PRS=$(gh pr list --state open --author "app/dependabot" --json number,mergeable --jq '.[] | select(.mergeable == "MERGEABLE") | .number')
+
+          if [ -n "$PRS" ]; then
+            echo "🔄 Auto-mergeando PRs de dependabot..."
+            for pr in $PRS; do
+              echo "→ Mergeando PR #$pr"
+              gh pr merge "$pr" --squash --delete-branch || echo "⚠️ Error mergeando PR #$pr"
+            done
+          else
+            echo "✅ No hay PRs de dependabot listos para mergear"
+          fi
+
+      - name: Create Issue if Critical Errors
+        if: failure()
+        run: |
+          # Crear issue si hay errores críticos
+          gh issue create \
+            --title "🚨 Critical Consistency Errors Detected" \
+            --body "The daily consistency check failed. Please review the logs and fix the issues.
+
+          **Log Summary:**
+          \`\`\`
+          $(cat logs/consistency-check.log | tail -20)
+          \`\`\`
+
+          **Next Steps:**
+          1. Review the full log in the workflow run
+          2. Fix any critical errors
+          3. Re-run the consistency check
+          4. Close this issue once resolved" \
+            --label "bug,consistency,automated"
+
+      - name: Upload Logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: consistency-logs
+          path: logs/
+          retention-days: 30

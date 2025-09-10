@@ -1,0 +1,46 @@
+name: Auto-merge PRs
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    if: github.actor == 'alexanderovie' && github.event.pull_request.draft == false
+
+    steps:
+      - name: Auto-merge PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+
+            // Solo auto-merge si:
+            // 1. El PR es tuyo
+            // 2. No es draft
+            // 3. Tiene el label 'auto-merge' o es de dependabot
+            const hasAutoMergeLabel = pr.labels.some(label => label.name === 'auto-merge');
+            const isDependabot = pr.user.login === 'dependabot[bot]';
+
+            if (hasAutoMergeLabel || isDependabot) {
+              await github.rest.pulls.merge({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number,
+                merge_method: 'squash'
+              });
+
+              console.log('✅ PR auto-merged successfully');
+            } else {
+              console.log('⏳ PR requires manual review or auto-merge label');
+            }
