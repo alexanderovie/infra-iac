@@ -1,85 +1,29 @@
-# yamllint disable rule:quoted-strings rule:indentation rule:brackets rule:empty-values rule:line-length
-# Dependabot configuration for Fascinante Digital Infrastructure
-# This file configures automated dependency updates
+# Dependabot configuration for infra-iac
+# SÚPER-ÉLITE: Agrupa updates semanalmente para reducir ruido
 
 version: 2
 updates:
-  # Terraform providers
-  - package-ecosystem: "terraform"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-    open-pull-requests-limit: 10
-    reviewers:
-      - "fascinante-digital/infra-team"
-    assignees:
-      - "fascinante-digital/infra-leads"
-    commit-message:
-      prefix: "chore"
-      include: "scope"
-    labels:
-      - "dependencies"
-      - "terraform"
-      - "automated"
-
-  # GitHub Actions
+  # GitHub Actions updates
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
       time: "09:00"
-    open-pull-requests-limit: 5
-    reviewers:
-      - "fascinante-digital/infra-team"
-    assignees:
-      - "fascinante-digital/infra-leads"
+    groups:
+      gh-actions:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
     commit-message:
       prefix: "chore"
       include: "scope"
-    labels:
-      - "dependencies"
-      - "github-actions"
-      - "automated"
-
-  # Pre-commit hooks
-  - package-ecosystem: "pip"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-    open-pull-requests-limit: 3
     reviewers:
-      - "fascinante-digital/infra-team"
+      - "alexanderovie"
     assignees:
-      - "fascinante-digital/infra-leads"
-    commit-message:
-      prefix: "chore"
-      include: "scope"
+      - "alexanderovie"
     labels:
       - "dependencies"
-      - "pre-commit"
-      - "automated"
-
-  # Docker (if any)
-  - package-ecosystem: "docker"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-    open-pull-requests-limit: 3
-    reviewers:
-      - "fascinante-digital/infra-team"
-    assignees:
-      - "fascinante-digital/infra-leads"
-    commit-message:
-      prefix: "chore"
-      include: "scope"
-    labels:
-      - "dependencies"
-      - "docker"
       - "automated"

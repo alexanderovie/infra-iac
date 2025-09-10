@@ -12,11 +12,11 @@ export CLOUDFLARE_API_KEY="b361ae69d2ab1930639a666d399cd0253c2d2"  # pragma: all
 export CLOUDFLARE_EMAIL="info@fascinantedigital.com"
 
 # ==== ⚡️ Configuración GitHub ====
-export GITHUB_TOKEN="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"  # pragma: allowlist secret
+export GITHUB_TOKEN="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"  # pragma: allowlist secret
 export GITHUB_OWNER="alexanderovie"
 
 # ==== ⚡️ Configuración Vercel ====
-export VERCEL_TOKEN="vercel_1234567890abcdef12345678"
+export VERCEL_TOKEN="O3VHygNiBrOfXfjvCUYjTiPF"
 export VERCEL_TEAM_ID="alexanderoviedo"
 
 # ==== ⚡️ Terraform Variables ====

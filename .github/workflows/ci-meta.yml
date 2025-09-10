@@ -1,0 +1,12 @@
+name: Meta CI
+on:
+  pull_request:
+    paths-ignore:
+      - "**/*.tf"
+      - "modules/**"
+      - "env/**"
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "No Terraform changes. Skipping heavy jobs."

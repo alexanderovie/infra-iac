@@ -1,0 +1,40 @@
+name: Terraform Plan (1Password)
+
+on:
+  pull_request:
+    paths:
+      - "**/*.tf"
+      - "modules/**"
+      - "env/**"
+      - ".terraform-version"
+      - ".github/workflows/terraform.yml"
+  push:
+    branches: [main]
+    paths:
+      - "**/*.tf"
+      - "modules/**"
+      - "env/**"
+      - ".terraform-version"
+      - ".github/workflows/terraform.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: terraform-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.ONEPASSWORD_SERVICE_ACCOUNT_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: 1password/install-cli-action@v1
+      - uses: hashicorp/setup-terraform@v3
+        with: { terraform_version: 1.9.5 }
+      - name: Init
+        run: op run --env-file=<(source scripts/export-env-1password.sh) -- terraform -chdir=envs/dev init -reconfigure
+      - name: Plan
+        run: op run --env-file=<(source scripts/export-env-1password.sh) -- terraform -chdir=envs/dev plan -no-color

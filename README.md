@@ -1,10 +1,14 @@
 # 🏗️ Infraestructura como Código - Fascinante Digital
 
-> **Repo 0 (Identidad y Control)** - Gestión centralizada de infraestructura con OpenTofu
+> **Repo 0 (Identidad y Control)** - Gestión centralizada de infraestructura con
+> OpenTofu
 
 ## 🎯 Objetivo
 
-Este repositorio gestiona la infraestructura base de **Fascinante Digital** usando **OpenTofu (Terraform)**. Proporciona una base sólida y escalable para el despliegue y gestión de recursos en la nube, siguiendo las mejores prácticas de Infrastructure as Code (IaC).
+Este repositorio gestiona la infraestructura base de **Fascinante Digital**
+usando **OpenTofu (Terraform)**. Proporciona una base sólida y escalable para el
+despliegue y gestión de recursos en la nube, siguiendo las mejores prácticas de
+Infrastructure as Code (IaC).
 
 ### 🔧 Problemas que resuelve
 
@@ -19,36 +23,41 @@ Este repositorio gestiona la infraestructura base de **Fascinante Digital** usan
 ### Herramientas necesarias
 
 ```bash
+# 1Password CLI v2
+brew install 1password-cli
+
 # OpenTofu (recomendado) o Terraform
 brew install opentofu
 
 # AWS CLI
 brew install awscli
-
-# Configurar AWS CLI
-aws configure
 ```
 
-### Variables de entorno requeridas
+### Configuración 1Password CLI v2
 
 ```bash
-# ==== ⚡️ Configuración AWS ====
-export AWS_ACCESS_KEY_ID="TU_AWS_ACCESS_KEY_ID"
-export AWS_SECRET_ACCESS_KEY="TU_AWS_SECRET_ACCESS_KEY"  # pragma: allowlist secret
-export AWS_REGION="us-east-1"
-export AWS_DEFAULT_REGION="us-east-1"
+# Alias recomendado para login rápido
+alias op-login='eval $(op signin)'
 
-# ==== ⚡️ Configuración Cloudflare ====
-export CLOUDFLARE_API_KEY="TU_CLOUDFLARE_API_KEY"  # pragma: allowlist secret
-export CLOUDFLARE_EMAIL="info@fascinantedigital.com"
+# 1. Autenticarse en 1Password CLI
+op-login
 
-# ==== ⚡️ Configuración GitHub ====
-export GITHUB_TOKEN="TU_GITHUB_TOKEN"
-export GITHUB_OWNER="alexanderovie"
+# 2. Verificar autenticación
+op whoami && op vault list
+```
 
-# ==== ⚡️ Configuración Vercel ====
-export VERCEL_TOKEN="TU_VERCEL_TOKEN"
-export VERCEL_TEAM_ID="alexanderoviedo"
+### Gestión de Secretos con 1Password
+
+Los secretos se gestionan automáticamente a través de 1Password CLI v2. No
+necesitas variables de entorno locales.
+
+```bash
+# Migrar secretos a 1Password (solo la primera vez)
+make tf-migrate-1password
+
+# Editar valores reales
+op item edit 'AWS – Prod' --vault 'Fascinante Digital Infrastructure' 'Access Key ID=TU_ACCESS_KEY'
+op item edit 'AWS – Prod' --vault 'Fascinante Digital Infrastructure' 'Secret Access Key=TU_SECRET_KEY'
 ```
 
 ## 📁 Estructura del Repositorio
@@ -88,23 +97,37 @@ infra-iac/
 
 ## 🚀 Comandos Básicos
 
-### 1. Inicializar el entorno
+### 1Password CLI v2 + Terraform
 
 ```bash
-cd envs/dev
-terraform init -reconfigure
+# 1. Autenticarse en 1Password
+make op-login
+
+# 2. Verificar configuración
+make op-check
+
+# 3. Migrar secretos (solo primera vez)
+make tf-migrate-1password
+
+# 4. Editar valores reales en 1Password
+op item edit 'AWS – Prod' --vault 'Fascinante Digital Infrastructure' 'Access Key ID=TU_ACCESS_KEY'
+
+# 5. Comandos Terraform con 1Password
+make tf-init      # Inicializar
+make tf-plan      # Planificar
+make tf-apply     # Aplicar
+make tf-validate  # Validar
+make tf-state     # Listar recursos
 ```
 
-### 2. Planificar cambios
+### Comandos de Validación
 
 ```bash
-terraform plan -var-file=../../secrets/dev.tfvars -compact-warnings
-```
-
-### 3. Aplicar cambios
-
-```bash
-terraform apply -var-file=../../secrets/dev.tfvars -auto-approve
+# Verificar que todo funciona
+make op-login && make op-check
+make tf-migrate-1password
+# editar valores reales con 'op item edit ...'
+make tf-plan
 ```
 
 ### 4. Verificar backend remoto
@@ -190,6 +213,61 @@ terraform destroy -var-file=../../secrets/dev.tfvars
 - **Infracost**: Estimación de costos
 - **Pre-commit**: Hooks de calidad de código
 
+## 🔄 CI/CD con GitHub Actions
+
+El workflow automático usa 1Password Service Account para acceder a los
+secretos:
+
+```yaml
+# .github/workflows/terraform.yml
+name: Terraform Plan (1Password)
+on:
+  workflow_dispatch:
+  push: { branches: [main] }
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    env:
+      OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.ONEPASSWORD_SERVICE_ACCOUNT_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: 1password/install-cli-action@v1
+      - uses: hashicorp/setup-terraform@v3
+        with: { terraform_version: 1.9.5 }
+      - name: Init
+        run:
+          op run --env-file=<(source scripts/export-env-1password.sh) --
+          terraform init -upgrade
+      - name: Plan
+        run:
+          op run --env-file=<(source scripts/export-env-1password.sh) --
+          terraform plan -no-color
+```
+
+### Configurar Service Account
+
+1. Crear Service Account en 1Password con acceso de solo lectura al vault
+2. Añadir el token como secret `ONEPASSWORD_SERVICE_ACCOUNT_TOKEN` en GitHub
+3. El workflow se ejecutará automáticamente en cada push a main
+
+### Comandos Makefile disponibles
+
+```bash
+# 1Password CLI v2
+make op-login              # Autenticarse en 1Password
+make op-check              # Verificar autenticación y vaults
+make tf-migrate-1password  # Migrar secretos a 1Password
+
+# Terraform con 1Password
+make tf-init      # Inicializar Terraform
+make tf-plan      # Planificar cambios
+make tf-apply     # Aplicar cambios
+make tf-validate  # Validar configuración
+make tf-state     # Listar recursos
+make tf-fmt       # Formatear código
+make tf-sh        # Shell interactivo
+```
+
 ## 📞 Soporte
 
 Para dudas o problemas con la infraestructura:
@@ -200,6 +278,8 @@ Para dudas o problemas con la infraestructura:
 
 ---
 
-> **⚠️ Importante**: Este repositorio contiene configuración de infraestructura crítica. Siempre revisar los planes antes de aplicar cambios y mantener las credenciales seguras.
+> **⚠️ Importante**: Este repositorio contiene configuración de infraestructura
+> crítica. Siempre revisar los planes antes de aplicar cambios y mantener las
+> credenciales seguras.
 
 **Última actualización**: Septiembre 2025 | **Versión**: SÚPER-ÉLITE
