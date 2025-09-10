@@ -1,8 +1,29 @@
+# Dependabot configuration for infra-iac
+# SÚPER-ÉLITE: Agrupa updates semanalmente para reducir ruido
+
 version: 2
 updates:
+  # GitHub Actions updates
   - package-ecosystem: "github-actions"
     directory: "/"
-    schedule: { interval: "weekly" }
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
     groups:
       gh-actions:
-        patterns: ["*"]
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    reviewers:
+      - "alexanderovie"
+    assignees:
+      - "alexanderovie"
+    labels:
+      - "dependencies"
+      - "automated"
