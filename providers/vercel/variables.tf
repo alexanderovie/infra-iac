@@ -50,7 +50,9 @@ variable "projects" {
     })), [])
 
     # Domains
-    domains = optional(list(string), [])
+    domains = optional(list(object({
+      domain = string
+    })), [])
 
     # Serverless function regions
     serverless_function_regions = optional(list(string), ["iad1"])

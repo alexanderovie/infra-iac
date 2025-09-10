@@ -2,10 +2,8 @@ output "projects" {
   description = "Map of Vercel project information"
   value = {
     for k, v in vercel_project.projects : k => {
-      id      = v.id
-      name    = v.name
-      url     = v.url
-      domains = v.domains
+      id   = v.id
+      name = v.name
     }
   }
 }

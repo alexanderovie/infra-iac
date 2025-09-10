@@ -15,6 +15,17 @@ variable "cloudflare_email" {
   type        = string
 }
 
+variable "vercel_api_token" {
+  description = "Vercel API token"
+  type        = string
+  sensitive   = true
+}
+
+variable "vercel_team_id" {
+  description = "Vercel team ID"
+  type        = string
+}
+
 variable "domain" {
   description = "Domain name to manage"
   type        = string

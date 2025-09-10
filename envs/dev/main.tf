@@ -13,6 +13,10 @@ terraform {
       source  = "cloudflare/cloudflare"
       version = "~> 5.5"
     }
+    vercel = {
+      source  = "vercel/vercel"
+      version = "~> 1.0"
+    }
   }
 }
 
@@ -20,6 +24,10 @@ terraform {
 provider "cloudflare" {
   api_key = var.cloudflare_api_key
   email   = var.cloudflare_email
+}
+
+provider "vercel" {
+  api_token = var.vercel_api_token
 }
 
 # Cloudflare zone lookup
@@ -70,6 +78,20 @@ resource "cloudflare_dns_record" "mx" {
   ttl      = 300
 }
 
+# DNS Records for Vercel Project
+# Project: fascinante-digital-app
+# Manual Vercel configuration required
+
+# DNS Record for staging subdomain
+resource "cloudflare_dns_record" "stage" {
+  zone_id = "6d7328e7f3edb975ef1f52cdb29178b7"
+  name    = "stage"
+  content = "cname.vercel-dns.com"
+  type    = "CNAME"
+  ttl     = 1
+  proxied = true
+}
+
 # SÚPER-ÉLITE Outputs
 output "zone_id" {
   description = "Cloudflare zone ID"
@@ -89,5 +111,17 @@ output "dns_records" {
     api          = cloudflare_dns_record.api.id
     verification = cloudflare_dns_record.verification.id
     mx           = cloudflare_dns_record.mx.id
+    stage        = cloudflare_dns_record.stage.id
+  }
+}
+
+output "staging_dns_record" {
+  description = "Staging subdomain DNS record"
+  value = {
+    id      = cloudflare_dns_record.stage.id
+    name    = "stage.fascinantedigital.com"
+    content = "cname.vercel-dns.com"
+    type    = "CNAME"
+    proxied = true
   }
 }

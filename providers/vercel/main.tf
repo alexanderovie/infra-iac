@@ -41,7 +41,7 @@ resource "vercel_project" "projects" {
   ignore_command = each.value.ignore_command
 
   # Serverless function region (singular)
-  serverless_function_region = each.value.serverless_function_region
+  serverless_function_region = each.value.serverless_function_regions[0]
 }
 
 # Vercel project domains (using vercel_project_domain)

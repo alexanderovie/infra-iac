@@ -7,6 +7,7 @@
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.10 |
 | <a name="requirement_cloudflare"></a> [cloudflare](#requirement\_cloudflare) | ~> 5.5 |
+| <a name="requirement_vercel"></a> [vercel](#requirement\_vercel) | ~> 1.0 |
 
 ## Providers
 
@@ -25,6 +26,7 @@ No modules.
 | [cloudflare_dns_record.api](https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs/resources/dns_record) | resource |
 | [cloudflare_dns_record.mx](https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs/resources/dns_record) | resource |
 | [cloudflare_dns_record.root](https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs/resources/dns_record) | resource |
+| [cloudflare_dns_record.stage](https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs/resources/dns_record) | resource |
 | [cloudflare_dns_record.verification](https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs/resources/dns_record) | resource |
 | [cloudflare_dns_record.www](https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs/resources/dns_record) | resource |
 | [cloudflare_zone.main](https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs/data-sources/zone) | data source |
@@ -40,12 +42,15 @@ No modules.
 | <a name="input_domain"></a> [domain](#input\_domain) | Domain name to manage | `string` | `"fascinantedigital.com"` | no |
 | <a name="input_main_ip"></a> [main\_ip](#input\_main\_ip) | Main IP address for A records | `string` | `"192.0.2.1"` | no |
 | <a name="input_route53_zone_id"></a> [route53\_zone\_id](#input\_route53\_zone\_id) | Route53 zone ID for automatic DNS record creation (optional) | `string` | `null` | no |
+| <a name="input_vercel_api_token"></a> [vercel\_api\_token](#input\_vercel\_api\_token) | Vercel API token | `string` | n/a | yes |
+| <a name="input_vercel_team_id"></a> [vercel\_team\_id](#input\_vercel\_team\_id) | Vercel team ID | `string` | n/a | yes |
 
 ## Outputs
 
 | Name | Description |
 |------|-------------|
 | <a name="output_dns_records"></a> [dns\_records](#output\_dns\_records) | SÚPER-ÉLITE DNS records created |
+| <a name="output_staging_dns_record"></a> [staging\_dns\_record](#output\_staging\_dns\_record) | Staging subdomain DNS record |
 | <a name="output_zone_id"></a> [zone\_id](#output\_zone\_id) | Cloudflare zone ID |
 | <a name="output_zone_name"></a> [zone\_name](#output\_zone\_name) | Cloudflare zone name |
 <!-- END_TF_DOCS -->
