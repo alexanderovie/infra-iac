@@ -16,19 +16,19 @@ tf-migrate-1password:
 
 # Terraform commands with 1Password CLI v2
 tf-init:
-	@op run --env-file=<(source scripts/export-env-1password.sh) -- terraform init -upgrade
+	@op run --env-file=<(source scripts/export-env-1password.sh) -- terraform -chdir=envs/dev init -upgrade
 
 tf-plan:
-	@op run --env-file=<(source scripts/export-env-1password.sh) -- terraform plan
+	@op run --env-file=<(source scripts/export-env-1password.sh) -- terraform -chdir=envs/dev plan
 
 tf-apply:
-	@op run --env-file=<(source scripts/export-env-1password.sh) -- terraform apply -auto-approve
+	@op run --env-file=<(source scripts/export-env-1password.sh) -- terraform -chdir=envs/dev apply -auto-approve
 
 tf-validate:
-	@op run --env-file=<(source scripts/export-env-1password.sh) -- terraform validate
+	@op run --env-file=<(source scripts/export-env-1password.sh) -- terraform -chdir=envs/dev validate
 
 tf-state:
-	@op run --env-file=<(source scripts/export-env-1password.sh) -- terraform state list || true
+	@op run --env-file=<(source scripts/export-env-1password.sh) -- terraform -chdir=envs/dev state list || true
 
 tf-fmt:
 	@terraform fmt -recursive
