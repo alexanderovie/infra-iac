@@ -24,6 +24,8 @@ export GITHUB_TOKEN
 # Vercel
 VERCEL_TOKEN="$(op_read "op://$VAULT/Vercel - Prod/API Token")"
 export VERCEL_TOKEN
+export TF_VAR_vercel_api_token="$VERCEL_TOKEN"
+export TF_VAR_vercel_team_id="${VERCEL_TEAM_ID:-}"
 
 # Supabase
 SUPABASE_SERVICE_ROLE_KEY="$(op_read "op://$VAULT/Supabase - Service Role/Service Role Key")"

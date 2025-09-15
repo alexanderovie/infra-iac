@@ -85,8 +85,17 @@ EXPIRED_SECRETS=()
 for secret in $SECRETS; do
     updated=$(gh secret list --json name,updatedAt --jq ".[] | select(.name == \"$secret\") | .updatedAt")
     # Verificar si el secreto es muy antiguo (más de 30 días)
-    if [[ $(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$updated" +%s) -lt $(date -j -v-30d +%s) ]]; then
-        EXPIRED_SECRETS+=("$secret")
+    # Compatible con macOS (date -j) y Linux (date -d)
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS
+        if [[ $(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$updated" +%s) -lt $(date -j -v-30d +%s) ]]; then
+            EXPIRED_SECRETS+=("$secret")
+        fi
+    else
+        # Linux
+        if [[ $(date -d "$updated" +%s) -lt $(date -d "30 days ago" +%s) ]]; then
+            EXPIRED_SECRETS+=("$secret")
+        fi
     fi
 done
 
